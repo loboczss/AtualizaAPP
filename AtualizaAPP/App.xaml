@@ -98,24 +98,29 @@
                 </Setter>
             </Style>
 
-            <!-- Estilo para ProgressBar -->
-            <Style x:Key="SimpleProgressBar" TargetType="ProgressBar">
-                <Setter Property="Height" Value="6"/>
-                <Setter Property="Foreground" Value="{StaticResource PrimaryBlue}"/>
-                <Setter Property="Background" Value="#E5E7EB"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ProgressBar">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                                <Border x:Name="PART_Indicator"
-                                        Background="{TemplateBinding Foreground}"
-                                        HorizontalAlignment="Left"
-                                        CornerRadius="3"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+             <!-- Estilo para ProgressBar -->
+             <Style x:Key="SimpleProgressBar" TargetType="ProgressBar">
+                 <Setter Property="Height" Value="6"/>
+                 <Setter Property="Foreground" Value="{StaticResource PrimaryBlue}"/>
+                 <Setter Property="Background" Value="#E5E7EB"/>
+                 <Setter Property="Template">
+                     <Setter.Value>
+                         <ControlTemplate TargetType="ProgressBar">
+                             <Border Background="{TemplateBinding Background}" CornerRadius="3" SnapsToDevicePixels="True">
+                                 <Grid ClipToBounds="True">
+                                     <Border x:Name="PART_Track"
+                                            Background="{TemplateBinding Background}"
+                                            CornerRadius="3"/>
+                                     <Border x:Name="PART_Indicator"
+                                            Background="{TemplateBinding Foreground}"
+                                            HorizontalAlignment="Left"
+                                            CornerRadius="3"/>
+                                 </Grid>
+                             </Border>
+                         </ControlTemplate>
+                     </Setter.Value>
+                 </Setter>
+             </Style>
 
             <!-- Estilos de texto -->
             <Style x:Key="Title" TargetType="TextBlock">

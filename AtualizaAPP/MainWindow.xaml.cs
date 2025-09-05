@@ -70,7 +70,7 @@ namespace AtualizaAPP
             Log(msg);
         }
 
-        private void SetProgress(double percent, string? _)
+        private void SetProgress(double percent, string? detail)
         {
             Dispatcher.Invoke(() =>
             {
@@ -83,6 +83,9 @@ namespace AtualizaAPP
                     Progress.IsIndeterminate = false;
                     Progress.Value = Math.Clamp(percent, 0, 100);
                 }
+
+                if (detail != null)
+                    ProgressDetail.Text = detail;
             });
         }
     }
