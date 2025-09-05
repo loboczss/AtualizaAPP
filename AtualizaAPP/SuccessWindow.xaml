@@ -32,7 +32,6 @@
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="OpenTargetBtn" Content="Abrir LeituraWPF" Click="OpenTargetBtn_Click"/>
-            <Button Content="Fechar" Margin="8,0,0,0" Click="CloseBtn_Click"/>
         </StackPanel>
     </Grid>
 </Window>
