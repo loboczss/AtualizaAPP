@@ -14,7 +14,7 @@ namespace AtualizaAPP.Utils
             Directory.CreateDirectory(dir);
         }
 
-        public static void CopyDirectory(string sourceDir, string destDir, HashSet<string>? excludeFileNames = null)
+        public static void CopyDirectory(string sourceDir, string destDir, HashSet<string>? excludeFileNames = null, HashSet<string>? excludeDirNames = null)
         {
             var src = new DirectoryInfo(sourceDir);
             if (!src.Exists) throw new DirectoryNotFoundException(sourceDir);
@@ -28,8 +28,9 @@ namespace AtualizaAPP.Utils
             }
             foreach (var sub in src.GetDirectories())
             {
+                if (excludeDirNames != null && excludeDirNames.Contains(sub.Name)) continue;
                 var destSub = Path.Combine(destDir, sub.Name);
-                CopyDirectory(sub.FullName, destSub, excludeFileNames);
+                CopyDirectory(sub.FullName, destSub, excludeFileNames, excludeDirNames);
             }
         }
 
