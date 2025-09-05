@@ -1,0 +1,11 @@
+{
+  "GitHub": {
+    "Owner": "loboczss",
+    "Repo": "leituraWPF",
+    "AssetNameContains": ".zip"
+  },
+  "Target": {
+    "ProcessName": "leituraWPF",
+    "MainExeName": "leituraWPF.exe"
+  }
+}
