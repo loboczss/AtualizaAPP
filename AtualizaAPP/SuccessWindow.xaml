@@ -239,10 +239,17 @@
 
             <!-- Footer com Botões -->
             <Border Grid.Row="2" Background="#f8f9fa" CornerRadius="0,0,16,16" Padding="24,16">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Right">
                     <Button x:Name="OpenTargetBtn" Content="🚀 Abrir"
-                            Style="{StaticResource PrimaryButton}" 
-                            Click="OpenTargetBtn_Click"/>
+                            Style="{StaticResource PrimaryButton}"
+                            Click="OpenTargetBtn_Click"
+                            HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="CountdownText"
+                               Text="O programa será aberto automaticamente em 30 segundos."
+                               FontSize="12"
+                               Foreground="#6c757d"
+                               Margin="0,8,0,0"
+                               HorizontalAlignment="Right"/>
                 </StackPanel>
             </Border>
         </Grid>
