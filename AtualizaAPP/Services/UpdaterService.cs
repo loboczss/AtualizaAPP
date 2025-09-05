@@ -19,8 +19,10 @@ namespace AtualizaAPP.Services
         private readonly Action<string> _status;
         private readonly Action<double, string?> _progress;
 
-        private string InstallDir => AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+        // Diretório alvo da atualização (pasta pai do atualizador)
+        private string InstallDir => Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))!.FullName;
         private string ThisExeName => Path.GetFileName(Assembly.GetExecutingAssembly().Location);
+        private const string UpdaterDirName = "AtualizaAPP";
 
         // EXCEÇÕES DA LIMPEZA (nível raiz)
         private static readonly string[] _excludeFileNamesRoot =
@@ -40,7 +42,8 @@ namespace AtualizaAPP.Services
             "backup-enviados",
             "backup-erros",
             "backup-pendentes",
-            "downloads"
+            "downloads",
+            UpdaterDirName
         };
 
         public UpdaterService(Action<string> log, Action<string> status, Action<double, string?> progress, Config config)
@@ -129,8 +132,9 @@ namespace AtualizaAPP.Services
                 _status("Criando backup...");
                 _progress(5, "Fazendo backup");
                 Directory.CreateDirectory(backupDir);
-                var exclude = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
-                FileUtils.CopyDirectory(InstallDir, backupDir, exclude);
+                var excludeFiles = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
+                var excludeDirs = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { UpdaterDirName };
+                FileUtils.CopyDirectory(InstallDir, backupDir, excludeFiles, excludeDirs);
 
                 // Limpar pasta
                 _progress(10, "Limpando pasta");
@@ -190,8 +194,9 @@ namespace AtualizaAPP.Services
                     if (Directory.Exists(backupDir))
                     {
                         _status("Restaurando backup...");
-                        var exclude = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
-                        FileUtils.CopyDirectory(backupDir, InstallDir, exclude);
+                        var excludeFiles = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
+                        var excludeDirs = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { UpdaterDirName };
+                        FileUtils.CopyDirectory(backupDir, InstallDir, excludeFiles, excludeDirs);
                     }
                 }
                 catch { /* ignore */ }
@@ -355,17 +360,19 @@ namespace AtualizaAPP.Services
 
         private void ApplyFiles(string fromDir)
         {
-            var exclude = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
+            var excludeFiles = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
+            var excludeDirs = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { UpdaterDirName };
             foreach (var dir in Directory.EnumerateDirectories(fromDir, "*", SearchOption.AllDirectories))
             {
                 var rel = Path.GetRelativePath(fromDir, dir);
+                if (IsInExcludedDir(rel, excludeDirs)) continue;
                 Directory.CreateDirectory(Path.Combine(InstallDir, rel));
             }
             foreach (var file in Directory.EnumerateFiles(fromDir, "*", SearchOption.AllDirectories))
             {
                 var rel = Path.GetRelativePath(fromDir, file);
                 var name = Path.GetFileName(file);
-                if (exclude.Contains(name)) continue; // não sobrescrever o atualizador
+                if (excludeFiles.Contains(name) || IsInExcludedDir(rel, excludeDirs)) continue; // não sobrescrever o atualizador
                 var dest = Path.Combine(InstallDir, rel);
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                 File.Copy(file, dest, true);
@@ -374,7 +381,8 @@ namespace AtualizaAPP.Services
 
         private void PurgeObsolete(string fromDir)
         {
-            var exclude = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
+            var excludeFiles = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
+            var excludeDirs = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { UpdaterDirName };
             var newSet = Directory.EnumerateFiles(fromDir, "*", SearchOption.AllDirectories)
                                   .Select(p => Path.GetRelativePath(fromDir, p))
                                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -383,7 +391,7 @@ namespace AtualizaAPP.Services
             {
                 var rel = Path.GetRelativePath(InstallDir, file);
                 var name = Path.GetFileName(file);
-                if (exclude.Contains(name)) continue;
+                if (excludeFiles.Contains(name) || IsInExcludedDir(rel, excludeDirs)) continue;
                 if (!newSet.Contains(rel))
                 {
                     try { File.Delete(file); } catch { }
@@ -392,6 +400,8 @@ namespace AtualizaAPP.Services
 
             foreach (var dir in Directory.EnumerateDirectories(InstallDir, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
             {
+                var rel = Path.GetRelativePath(InstallDir, dir);
+                if (IsInExcludedDir(rel, excludeDirs)) continue;
                 if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
                 {
                     try { Directory.Delete(dir, false); } catch { }
@@ -405,6 +415,17 @@ namespace AtualizaAPP.Services
             double d = v; int i = 0;
             while (d >= 1024 && i < suf.Length - 1) { d /= 1024; i++; }
             return $"{d:0.##} {suf[i]}";
+        }
+
+        private static bool IsInExcludedDir(string relativePath, System.Collections.Generic.HashSet<string> excludedDirs)
+        {
+            foreach (var ex in excludedDirs)
+            {
+                if (relativePath.Equals(ex, StringComparison.OrdinalIgnoreCase) ||
+                    relativePath.StartsWith(ex + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
     }
 }
