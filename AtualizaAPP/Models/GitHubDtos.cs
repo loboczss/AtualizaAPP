@@ -27,4 +27,12 @@ namespace AtualizaAPP.Models
         public string? AssetName { get; set; }
         public long ExpectedSize { get; set; }
     }
+
+    // ⬇️ NOVO: usado para retornar sucesso + versões para a tela
+    public class UpdateOutcome
+    {
+        public bool Success { get; set; }
+        public Version OldVersion { get; set; } = new Version(0, 0, 0, 0);
+        public Version NewVersion { get; set; } = new Version(0, 0, 0, 0);
+    }
 }

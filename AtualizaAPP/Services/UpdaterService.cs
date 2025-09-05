@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AtualizaAPP.Models;
@@ -24,7 +25,7 @@ namespace AtualizaAPP.Services
         // EXCEÇÕES DA LIMPEZA (nível raiz)
         private static readonly string[] _excludeFileNamesRoot =
         {
-            "AtualizaAPP.config.json", // novo nome do config
+            "AtualizaAPP.config.json", // nosso config
             "appsettings.json",        // se existir, preserva também
             "AtualizaAPP.deps.json",
             "syncstats.json",
@@ -52,7 +53,7 @@ namespace AtualizaAPP.Services
             var result = new UpdateCheckResult { Success = false, Message = string.Empty };
             try
             {
-                var local = GetLocalTargetVersion();
+                var local = GetLocalTargetVersion(); // ⬅️ agora olha version.txt, exe e dll
                 var release = await _gh.GetLatestReleaseAsync(Config.GitHub.Owner, Config.GitHub.Repo, ct);
                 if (release == null || string.IsNullOrWhiteSpace(release.TagName))
                     return Fail("Não foi possível obter informações do release");
@@ -84,15 +85,34 @@ namespace AtualizaAPP.Services
             UpdateCheckResult Fail(string msg) => new() { Success = false, Message = msg };
         }
 
-        public async Task<bool> PerformUpdateAsync(CancellationToken ct)
+        // AGORA RETORNA Outcome (sucesso + versões anterior/nova)
+        public async Task<UpdateOutcome> PerformUpdateAsync(CancellationToken ct)
         {
-            // 1) Verificação
+            var outcome = new UpdateOutcome();
             _status("Verificando atualizações...");
             var check = await CheckForUpdatesAsync(ct);
-            if (!check.Success) { _status(check.Message); return false; }
-            if (!check.UpdateAvailable) { _status("Nada para atualizar."); return true; }
+            if (!check.Success)
+            {
+                _status(check.Message);
+                outcome.Success = false;
+                outcome.OldVersion = check.LocalVersion;
+                outcome.NewVersion = check.RemoteVersion;
+                return outcome;
+            }
+            if (!check.UpdateAvailable)
+            {
+                _status("Nada para atualizar.");
+                outcome.Success = false;
+                outcome.OldVersion = check.LocalVersion;
+                outcome.NewVersion = check.RemoteVersion;
+                return outcome;
+            }
 
-            // 2) Dirs temporários
+            // guarda versões para a tela de sucesso
+            outcome.OldVersion = check.LocalVersion;
+            outcome.NewVersion = check.RemoteVersion;
+
+            // Dirs temporários
             var tempRoot = Path.Combine(Path.GetTempPath(), "AtualizaAPP_" + Guid.NewGuid().ToString("N"));
             var zipPath = Path.Combine(tempRoot, check.AssetName ?? "update.zip");
             var extractDir = Path.Combine(tempRoot, "extracted");
@@ -101,25 +121,25 @@ namespace AtualizaAPP.Services
 
             try
             {
-                // 3) Fechar app alvo
+                // Fechar app alvo
                 _status($"Encerrando processo alvo: {Config.Target.ProcessName}...");
                 FileUtils.SafeKillProcessesByName(Config.Target.ProcessName);
 
-                // 4) Backup (antes de limpar/baixar)
+                // Backup
                 _status("Criando backup...");
                 _progress(5, "Fazendo backup");
                 Directory.CreateDirectory(backupDir);
                 var exclude = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
                 FileUtils.CopyDirectory(InstallDir, backupDir, exclude);
 
-                // 5) Limpar pasta de instalação (exceções no nível raiz)
+                // Limpar pasta
                 _progress(10, "Limpando pasta");
                 CleanInstallFolder();
 
-                // 6) Download
+                // Download
                 _status("Baixando pacote...");
                 long last = 0; long? total = null;
-                const double baseOffset = 15.0; // progresso visual: 15 → 75%
+                const double baseOffset = 15.0; // 15 → 75 %
                 const double range = 60.0;
                 await _gh.DownloadToFileAsync(new Uri(check.DownloadUrl!), zipPath,
                     new Progress<(long read, long? total)>(tuple =>
@@ -136,30 +156,30 @@ namespace AtualizaAPP.Services
                         }
                     }), ct);
 
-                // 7) Validar zip
+                // Validar zip
                 using (var za = ZipFile.OpenRead(zipPath))
                 {
                     if (za.Entries.Count == 0) throw new InvalidDataException("ZIP vazio");
                 }
 
-                // 8) Extrair
+                // Extrair
                 _status("Extraindo pacote...");
                 _progress(78, "Extraindo arquivos");
                 FileUtils.EnsureEmptyDir(extractDir);
                 await ExtractWithProgressAsync(zipPath, extractDir,
                     new Progress<double>(p => _progress(78 + p * 12.0, null)), ct); // 78-90%
 
-                // 9) Aplicar (copiar e limpar obsoletos)
+                // Aplicar
                 _status("Aplicando atualização...");
                 _progress(92, "Copiando arquivos");
                 ApplyFiles(extractDir);
                 _progress(98, "Limpando obsoletos");
                 PurgeObsolete(extractDir);
 
-                // 10) Sucesso
                 _progress(100, "Concluído");
                 _status("Atualização concluída.");
-                return true;
+                outcome.Success = true;
+                return outcome;
             }
             catch (Exception ex)
             {
@@ -175,7 +195,8 @@ namespace AtualizaAPP.Services
                     }
                 }
                 catch { /* ignore */ }
-                return false;
+                outcome.Success = false;
+                return outcome;
             }
             finally
             {
@@ -235,22 +256,65 @@ namespace AtualizaAPP.Services
             }
         }
 
-        // --------- HELPERS ----------
+        // --------- VERSÃO LOCAL (version.txt, exe, dll) ----------
         private Version GetLocalTargetVersion()
         {
             try
             {
-                var path = Path.Combine(InstallDir, Config.Target.MainExeName);
-                if (File.Exists(path))
-                {
-                    var v = AssemblyName.GetAssemblyName(path).Version;
-                    if (v != null) return v;
-                }
+                // 1) version.txt (última linha não vazia)
+                var vTxt = TryReadVersionTxt();
+                if (vTxt != null) return vTxt;
+
+                // 2) EXE e DLL → pega a maior
+                Version? vExe = TryGetAssemblyVersion(Path.Combine(InstallDir, Config.Target.MainExeName));
+                var dllPath = Path.Combine(InstallDir, Path.GetFileNameWithoutExtension(Config.Target.MainExeName) + ".dll");
+                Version? vDll = TryGetAssemblyVersion(dllPath);
+
+                if (vExe != null && vDll != null) return vExe > vDll ? vExe : vDll;
+                if (vExe != null) return vExe;
+                if (vDll != null) return vDll;
             }
             catch { }
             return new Version(0, 0, 0, 0);
         }
 
+        private Version? TryReadVersionTxt()
+        {
+            try
+            {
+                var p = Path.Combine(InstallDir, "version.txt");
+                if (!File.Exists(p)) return null;
+
+                // pega a última linha não vazia
+                var lines = File.ReadAllLines(p)
+                                .Select(l => l.Trim())
+                                .Where(l => !string.IsNullOrWhiteSpace(l))
+                                .ToArray();
+                if (lines.Length == 0) return null;
+
+                var last = lines[^1];
+                // aceita "v1.2.3.4" ou "1.2.3.4"
+                var m = Regex.Match(last, @"^v?(\d+(\.\d+){1,3})$", RegexOptions.IgnoreCase);
+                if (!m.Success) return null;
+
+                var raw = m.Groups[1].Value; // só números e pontos
+                return Version.TryParse(raw, out var v) ? v : null;
+            }
+            catch { return null; }
+        }
+
+        private static Version? TryGetAssemblyVersion(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return null;
+                var v = AssemblyName.GetAssemblyName(path).Version;
+                return v;
+            }
+            catch { return null; }
+        }
+
+        // --------- HELPERS ----------
         private static Version? ParseVersion(string tag)
         {
             if (string.IsNullOrWhiteSpace(tag)) return null;

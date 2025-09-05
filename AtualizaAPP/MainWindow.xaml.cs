@@ -28,7 +28,6 @@ namespace AtualizaAPP
 
         private Config LoadConfig()
         {
-            // Novo nome do arquivo de config
             const string cfgName = "AtualizaAPP.config.json";
             try
             {
@@ -96,13 +95,17 @@ namespace AtualizaAPP
                 Log("Iniciando atualização...");
                 SetStatus("Iniciando atualização...");
                 SetProgress(0, "");
-                var ok = await _updater.PerformUpdateAsync(_cts.Token);
-                if (ok)
+                var outcome = await _updater.PerformUpdateAsync(_cts.Token);
+
+                if (outcome.Success)
                 {
-                    SetStatus("Atualização concluída com sucesso. Abrindo aplicativo atualizado...");
-                    await Task.Delay(800);
-                    _updater.LaunchTargetApp();
-                    Close();
+                    // Abre a tela de sucesso e fecha a principal
+                    var win = new SuccessWindow(outcome.OldVersion, outcome.NewVersion, onOpenTarget: () =>
+                    {
+                        _updater.LaunchTargetApp();
+                    });
+                    win.Show();
+                    Close(); // fecha a Main
                 }
                 else
                 {
@@ -119,7 +122,9 @@ namespace AtualizaAPP
             }
             finally
             {
-                ToggleButtons(true);
+                // Se a janela principal ainda existir (não foi fechada), reabilita botões
+                if (IsLoaded)
+                    ToggleButtons(true);
             }
         }
 
