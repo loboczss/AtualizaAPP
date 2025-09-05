@@ -25,6 +25,11 @@
                        VerticalAlignment="Center"/>
         </StackPanel>
 
+        <TextBlock x:Name="ProgressDetail"
+                   Grid.Row="1"
+                   Style="{StaticResource Subtitle}"
+                   VerticalAlignment="Center"/>
+
         <ProgressBar x:Name="Progress"
                      Grid.Row="2"
                      Minimum="0"
