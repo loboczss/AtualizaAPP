@@ -1,37 +1,250 @@
-<Window x:Class="AtualizaAPP.SuccessWindow"
+﻿<Window x:Class="AtualizaAPP.SuccessWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Atualizacao concluida" Height="309" Width="520"
-        WindowStartupLocation="CenterScreen"
-        Background="White" ResizeMode="NoResize">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="12"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        Title="Atualização Concluída - One Engenharia"
+        Width="520" Height="521"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#f4f7fa"
+        ShowInTaskbar="False"
+        WindowStyle="None"
+        AllowsTransparency="True">
 
-        <StackPanel>
-            <TextBlock Text="Atualizacao concluida" FontSize="22" FontWeight="Bold"/>
-            <TextBlock Text="Seu aplicativo foi atualizado com sucesso." Opacity="0.75"/>
-        </StackPanel>
+    <Window.Resources>
+        <!-- Botão Primário -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#007ACC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0585db"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#007ACC" BlurRadius="12" ShadowDepth="2" Opacity="0.3"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#005a99"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-        <Separator Grid.Row="1"/>
+        <!-- Botão Secundário -->
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="Foreground" Value="#495057"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#dee2e6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#f8f9fa"/>
+                    <Setter Property="BorderBrush" Value="#007ACC"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#e9ecef"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-        <StackPanel Grid.Row="2" Margin="0,12,0,12">
-            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <TextBlock Text="Versao anterior:" FontWeight="SemiBold" Width="140"/>
-                <TextBlock x:Name="OldVersionText" Text="v0.0.0.0"/>
+        <!-- Botão Fechar -->
+        <Style x:Key="CloseButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#6c757d"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="16">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#f8f9fa"/>
+                    <Setter Property="Foreground" Value="#dc3545"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#223c5c" Opacity="0.12" BlurRadius="24" ShadowDepth="4"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Info Box Style -->
+        <Style x:Key="InfoBoxStyle" TargetType="Border">
+            <Setter Property="Background" Value="#e8f5e8"/>
+            <Setter Property="BorderBrush" Value="#c3e6c3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="Margin" Value="0,16,0,16"/>
+        </Style>
+
+        <!-- Title Style -->
+        <Style x:Key="TitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#212529"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- Subtitle Style -->
+        <Style x:Key="SubtitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#6c757d"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+        </Style>
+
+        <!-- Version Label Style -->
+        <Style x:Key="VersionLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#495057"/>
+        </Style>
+
+        <!-- Version Value Style -->
+        <Style x:Key="VersionValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#007ACC"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- Container Principal -->
+    <Border Style="{StaticResource CardStyle}" Margin="8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header com botão fechar -->
+            <Grid Grid.Row="0" Margin="24,20,24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Ícone e Título -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Border Background="#e8f5e8" CornerRadius="25" Width="50" Height="50" 
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <Path Data="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,16.5L18,9.5L16.59,8.09L11,13.67L7.91,10.59L6.5,12L11,16.5Z" 
+                              Fill="#28a745" Width="24" Height="24" Stretch="Uniform" 
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="✅ Atualização Concluída" Style="{StaticResource TitleStyle}" TextAlignment="Left"/>
+                        <TextBlock Text="O aplicativo foi atualizado com sucesso" Style="{StaticResource SubtitleStyle}" TextAlignment="Left"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Conteúdo Principal -->
+            <StackPanel Grid.Row="1" Margin="24,12,24,20">
+
+                <!-- Informações das Versões -->
+                <Border Style="{StaticResource InfoBoxStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Versão Anterior -->
+                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                            <TextBlock Text="📦 Versão Anterior" Style="{StaticResource VersionLabelStyle}" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="OldVersionText" Text="v0.0.0.0" Style="{StaticResource VersionValueStyle}"/>
+                        </StackPanel>
+
+                        <!-- Nova Versão -->
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <TextBlock Text="🚀 Nova Versão" Style="{StaticResource VersionLabelStyle}" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="NewVersionText" Text="v0.0.0.0" Style="{StaticResource VersionValueStyle}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Descrição -->
+                <TextBlock TextWrapping="Wrap" FontSize="14" Foreground="#495057" LineHeight="22"
+                           Text="A atualização foi aplicada com sucesso! O aplicativo está pronto para uso com todas as novas funcionalidades e melhorias."
+                           Margin="0,0,0,12"/>
+
+                <!-- Status de Sucesso -->
+                <Border Background="#d1edff" BorderBrush="#a6d5fa" BorderThickness="1" 
+                        CornerRadius="8" Padding="12,8" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎉" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Atualização concluída com sucesso! Aproveite as novidades."
+                                   FontSize="13" Foreground="#0c5460" VerticalAlignment="Center"
+                                   FontStyle="Italic"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                <TextBlock Text="Nova versao:" FontWeight="SemiBold" Width="140"/>
-                <TextBlock x:Name="NewVersionText" Text="v0.0.0.0"/>
-            </StackPanel>
-        </StackPanel>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="OpenTargetBtn" Content="Abrir LeituraWPF" Click="OpenTargetBtn_Click"/>
-        </StackPanel>
-    </Grid>
+            <!-- Footer com Botões -->
+            <Border Grid.Row="2" Background="#f8f9fa" CornerRadius="0,0,16,16" Padding="24,16">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="OpenTargetBtn" Content="🚀 Abrir LeituraWPF"
+                            Style="{StaticResource PrimaryButton}" 
+                            Click="OpenTargetBtn_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
 </Window>
