@@ -381,8 +381,16 @@ namespace AtualizaAPP.Services
 
         private void PurgeObsolete(string fromDir)
         {
-            var excludeFiles = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { ThisExeName };
-            var excludeDirs = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { UpdaterDirName };
+            // Preserve the same essential files and folders used during the initial cleaning
+            var excludeFiles = new System.Collections.Generic.HashSet<string>(_excludeFileNamesRoot, StringComparer.OrdinalIgnoreCase)
+            {
+                ThisExeName
+            };
+            var excludeDirs = new System.Collections.Generic.HashSet<string>(_excludeDirNamesRoot, StringComparer.OrdinalIgnoreCase)
+            {
+                UpdaterDirName
+            };
+
             var newSet = Directory.EnumerateFiles(fromDir, "*", SearchOption.AllDirectories)
                                   .Select(p => Path.GetRelativePath(fromDir, p))
                                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
